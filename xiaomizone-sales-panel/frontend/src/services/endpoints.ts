@@ -24,3 +24,4 @@ export const endpoints = {
     return `${API_BASE}/api/products${query}`;
   }
 };
+
