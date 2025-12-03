@@ -9,7 +9,7 @@ export interface Product {
   imageUrl?: string;
   priceRetail: number;
   priceWholesale: number;
-  stockByBranch: Record<string, number>; // { "CDE": 10, "TUPI": 3 }
+  stockByBranch: Record<string, number>; // { "DEPOSITO": 10, "TIENDA": 3 }
 }
 
 const MOCK_PRODUCTS: Product[] = [
@@ -22,7 +22,7 @@ const MOCK_PRODUCTS: Product[] = [
     priceRetail: 280,
     priceWholesale: 275,
     imageUrl: "",
-    stockByBranch: { CDE: 5, TUPI: 1 }
+    stockByBranch: { DEPOSITO: 5, TIENDA: 1 }
   },
   {
     id: "p2",
@@ -33,7 +33,7 @@ const MOCK_PRODUCTS: Product[] = [
     priceRetail: 385,
     priceWholesale: 380,
     imageUrl: "",
-    stockByBranch: { CDE: 2, TUPI: 0 }
+    stockByBranch: { DEPOSITO: 2, TIENDA: 0 }
   },
   {
     id: "p3",
@@ -44,7 +44,7 @@ const MOCK_PRODUCTS: Product[] = [
     priceRetail: 135,
     priceWholesale: 130,
     imageUrl: "",
-    stockByBranch: { CDE: 8, TUPI: 3 }
+    stockByBranch: { DEPOSITO: 8, TIENDA: 3 }
   },
   {
     id: "p4",
@@ -55,7 +55,7 @@ const MOCK_PRODUCTS: Product[] = [
     priceRetail: 43,
     priceWholesale: 40,
     imageUrl: "",
-    stockByBranch: { CDE: 10, TUPI: 4 }
+    stockByBranch: { DEPOSITO: 10, TIENDA: 4 }
   },
   {
     id: "p5",
@@ -66,7 +66,7 @@ const MOCK_PRODUCTS: Product[] = [
     priceRetail: 19,
     priceWholesale: 17.5,
     imageUrl: "",
-    stockByBranch: { CDE: 12, TUPI: 5 }
+    stockByBranch: { DEPOSITO: 12, TIENDA: 5 }
   }
   // Puedes seguir agregando más mock según tu lista real
 ];
@@ -133,3 +133,4 @@ export async function handleProducts(request: Request): Promise<Response> {
     totalPages
   });
 }
+
