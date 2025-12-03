@@ -26,27 +26,20 @@ export const ProductTable: React.FC<Props> = ({ items }) => {
           </tr>
         </thead>
         <tbody>
-          {items.map((p) => (
-            <tr key={p.id} className="border-t">
-              <td className="px-3 py-2">{p.name}</td>
-              <td className="px-3 py-2">{p.sku}</td>
-              <td className="px-3 py-2">{p.category}</td>
-              <td className="px-3 py-2 text-right">
-                {p.priceRetail.toFixed(2)} $
-              </td>
-              <td className="px-3 py-2 text-right">
-                {p.priceWholesale.toFixed(2)} $
-              </td>
-              <td className="px-3 py-2">
-                {p.stockByBranch["Deposito"] ?? 0}
-              </td>
-              <td className="px-3 py-2">
-                {p.stockByBranch["Tienda"] ?? 0}
-              </td>
-            </tr>
-          ))}
-        </tbody>
+  {products.map((p) => (
+    <tr key={p.id}>
+      <td>{p.name}</td>
+      <td>{p.sku}</td>
+      <td>{p.category}</td>
+      <td>{p.priceRetail}</td>
+      <td>{p.priceWholesale}</td>
+      <td>{p.stockByBranch.DEPOSITO}</td>
+      <td>{p.stockByBranch.TIENDA}</td>
+    </tr>
+  ))}
+</tbody>
       </table>
     </div>
   );
 };
+
