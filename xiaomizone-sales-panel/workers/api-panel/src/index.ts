@@ -1,3 +1,6 @@
+// workers/api-panel/src/index.ts
+import { handleProducts } from "./routes/products";
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -24,6 +27,11 @@ export default {
       });
     }
 
+    if (path.startsWith("/api/products")) {
+      return handleProducts(request);
+    }
+
     return json({ error: "Not found", path }, 404);
   }
 };
+
