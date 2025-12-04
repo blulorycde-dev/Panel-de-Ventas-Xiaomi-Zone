@@ -1,7 +1,11 @@
-// frontend/src/hooks/useProducts.ts
-import { useEffect, useState } from "react";
-import { endpoints } from "../services/endpoints";
-import { getJson } from "../services/apiClient";
+// Tipos compartidos para productos y filtros
+
+export type Branch = "DEPOSITO" | "TIENDA";
+
+export interface StockByBranch {
+  DEPOSITO: number;
+  TIENDA: number;
+}
 
 export interface Product {
   id: string;
@@ -9,10 +13,10 @@ export interface Product {
   name: string;
   category: string;
   barcode?: string;
-  imageUrl?: string;
   priceRetail: number;
   priceWholesale: number;
-  stockByBranch: Record<string, number>; // { Deposito: 10, Tienda: 3 }
+  imageUrl?: string;
+  stockByBranch: StockByBranch;
 }
 
 export interface ProductsResponse {
@@ -23,57 +27,33 @@ export interface ProductsResponse {
   totalPages: number;
 }
 
-export function useProducts() {
-  const [q, setQ] = useState("");
-  const [category, setCategory] = useState<string>("");
-  const [branch, setBranch] = useState<string>(""); // "Deposito" | "Tienda" | ""
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(25);
+/**
+ * Llama al worker de API de panel:
+ *   GET https://panel-general-api.blulorycde.workers.dev/api/products?q=...
+ */
+export async function fetchProducts(params: {
+  q?: string;
+  category?: string;
+  branchFilter?: "AMBOS" | Branch;
+  page?: number;
+  pageSize?: number;
+}): Promise<ProductsResponse> {
+  const apiBase =
+    import.meta.env.VITE_API_BASE ??
+    "https://panel-general-api.blulorycde.workers.dev";
 
-  const [data, setData] = useState<ProductsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const url = new URL("/api/products", apiBase);
 
-  async function fetchProducts() {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = endpoints.products({
-        q,
-        category,
-        // el Worker convierte a upper, así que no importa el case
-        branch,
-        page,
-        pageSize
-      });
-      const json = await getJson<ProductsResponse>(url);
-      setData(json);
-    } catch (err) {
-      console.error(err);
-      setError("No se pudieron cargar los productos.");
-    } finally {
-      setLoading(false);
-    }
+  if (params.q) url.searchParams.set("q", params.q);
+  if (params.category && params.category !== "TODAS") {
+    url.searchParams.set("category", params.category);
   }
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.pageSize) url.searchParams.set("pageSize", String(params.pageSize));
 
-  useEffect(() => {
-    fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, category, branch]);
-
-  return {
-    q,
-    setQ,
-    category,
-    setCategory,
-    branch,
-    setBranch,
-    page,
-    setPage,
-    pageSize,
-    data,
-    loading,
-    error,
-    fetchProducts
-  };
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Error ${res.status} al cargar productos`);
+  }
+  return (await res.json()) as ProductsResponse;
 }
