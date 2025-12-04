@@ -1,4 +1,4 @@
-:root {
+:root { 
   --xz-orange: #ff6a00;
   --xz-bg: #f5f5f7;
   --xz-border: #e2e2e7;
@@ -144,6 +144,24 @@ td.num {
   cursor: pointer;
 }
 
+/* Layout principal: tabla + panel lateral */
+
+.layout-main {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.main-column {
+  flex: 3;
+  min-width: 0;
+}
+
+.side-column {
+  flex: 1.4;
+  min-width: 260px;
+}
+
 @media (max-width: 768px) {
   .app-shell {
     padding: 8px;
@@ -156,4 +174,14 @@ td.num {
   table {
     font-size: 12px;
   }
+
+  .layout-main {
+    flex-direction: column;
+  }
+
+  .side-column {
+    min-width: 0;
+  }
 }
+
+
