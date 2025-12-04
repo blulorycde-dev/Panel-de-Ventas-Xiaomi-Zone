@@ -1,77 +1,144 @@
-// frontend/src/pages/SalesPage.tsx
-import React from "react";
-import { useProducts } from "../hooks/useProducts";
-import { ProductSearch } from "../components/sales/ProductSearch";
+import React, { useEffect, useState } from "react";
+import { Product, fetchProducts } from "../hooks/useProducts";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ProductTable } from "../components/sales/ProductTable";
 
-export const SalesPage: React.FC = () => {
-  const {
-    q,
-    setQ,
-    category,
-    setCategory,
-    branch,
-    setBranch,
-    page,
-    setPage,
-    data,
-    loading,
-    error,
-    fetchProducts
-  } = useProducts();
+type BranchFilter = "AMBOS" | "DEPOSITO" | "TIENDA";
 
-  const totalPages = data?.totalPages ?? 1;
+export const SalesPage: React.FC = () => {
+  const { isMobile } = useResponsiveLayout();
+
+  const [q, setQ] = useState("");
+  const [category, setCategory] = useState("TODAS");
+  const [branchFilter, setBranchFilter] = useState<BranchFilter>("AMBOS");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [items, setItems] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  async function load(pageToLoad = 1) {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await fetchProducts({
+        q: q.trim() || undefined,
+        category: category !== "TODAS" ? category : undefined,
+        branchFilter,
+        page: pageToLoad,
+        pageSize
+      });
+
+      setItems(data.items);
+      setPage(data.page);
+      setTotal(data.total);
+      setTotalPages(data.totalPages || 1);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message ?? "Error al cargar productos");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Carga inicial
+  useEffect(() => {
+    load(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleSubmit(evt: React.FormEvent) {
+    evt.preventDefault();
+    load(1);
+  }
+
+  function handleNextPage() {
+    if (page < totalPages) load(page + 1);
+  }
+
+  function handlePrevPage() {
+    if (page > 1) load(page - 1);
+  }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-      <h1 className="text-xl font-semibold mb-2">
-        Búsqueda de productos
-      </h1>
+    <div className="app-shell">
+      <div className="card">
+        <h1>Panel de ventas · Búsqueda de productos</h1>
+        <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
+          Vista rápida para vendedores — optimizada para{" "}
+          {isMobile ? "móvil" : "escritorio"}.
+        </p>
 
-      <ProductSearch
-        q={q}
-        onQChange={setQ}
-        category={category}
-        onCategoryChange={setCategory}
-        branch={branch}
-        onBranchChange={setBranch}
-        onSearch={() => {
-          setPage(1);
-          fetchProducts();
-        }}
-      />
+        <form className="toolbar" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, SKU o código"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            style={{ minWidth: 180, flex: "1 1 160px" }}
+          />
 
-      {loading && <div>Cargando productos…</div>}
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="TODAS">Todas las categorías</option>
+            <option value="movilidad">Movilidad eléctrica</option>
+            <option value="myhome">My Home</option>
+            <option value="electronicos">Electrónicos</option>
+            <option value="wearables">Wearables</option>
+          </select>
 
-      {data && (
-        <>
-          <ProductTable items={data.items} />
-          <div className="flex items-center justify-between mt-2 text-sm">
-            <span>
-              Página {data.page} de {totalPages} · {data.total} productos
-            </span>
-            <div className="flex gap-2">
-              <button
-                className="border rounded px-3 py-1 disabled:opacity-50"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                Anterior
-              </button>
-              <button
-                className="border rounded px-3 py-1 disabled:opacity-50"
-                onClick={() =>
-                  setPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={page >= totalPages}
-              >
-                Siguiente
-              </button>
-            </div>
+          <select
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value as BranchFilter)}
+          >
+            <option value="AMBOS">Depósito + Tienda</option>
+            <option value="DEPOSITO">Solo Depósito</option>
+            <option value="TIENDA">Solo Tienda</option>
+          </select>
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Cargando..." : "Buscar"}
+          </button>
+        </form>
+
+        {error && (
+          <div
+            style={{
+              marginBottom: 8,
+              padding: 8,
+              borderRadius: 6,
+              background: "#fef2f2",
+              color: "#b91c1c",
+              fontSize: 12
+            }}
+          >
+            {error}
           </div>
-        </>
-      )}
+        )}
+
+        <ProductTable items={items} />
+
+        <div className="pagination">
+          <span>
+            Página {page} de {totalPages} · {total} productos
+          </span>
+          <button onClick={handlePrevPage} disabled={page <= 1 || loading}>
+            Anterior
+          </button>
+          <button
+            onClick={handleNextPage}
+            disabled={page >= totalPages || loading}
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
