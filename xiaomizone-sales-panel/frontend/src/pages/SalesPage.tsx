@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Product, fetchProducts } from "../hooks/useProducts";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ProductTable } from "../components/sales/ProductTable";
+import { useCart } from "../hooks/useCart";
+import { CartPanel } from "../components/sales/CartPanel";
 
 type BranchFilter = "AMBOS" | "DEPOSITO" | "TIENDA";
 
@@ -19,6 +21,9 @@ export const SalesPage: React.FC = () => {
   const [pageSize] = useState(25);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  const { items: cartItems, addItem, removeItem, clearCart } = useCart();
+  const [note, setNote] = useState("");
 
   async function load(pageToLoad = 1) {
     try {
@@ -64,9 +69,15 @@ export const SalesPage: React.FC = () => {
     if (page > 1) load(page - 1);
   }
 
+  function handleClearNote() {
+    clearCart();
+    setNote("");
+  }
+
   return (
-    <div className="app-shell">
-      <div className="card">
+    <div className="app-shell layout-main">
+      {/* Columna principal: búsqueda + tabla */}
+      <div className="main-column card">
         <h1>Panel de ventas · Búsqueda de productos</h1>
         <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
           Vista rápida para vendedores — optimizada para{" "}
@@ -122,7 +133,7 @@ export const SalesPage: React.FC = () => {
           </div>
         )}
 
-        <ProductTable items={items} />
+        <ProductTable items={items} onAddToCart={addItem} />
 
         <div className="pagination">
           <span>
@@ -138,6 +149,17 @@ export const SalesPage: React.FC = () => {
             Siguiente
           </button>
         </div>
+      </div>
+
+      {/* Columna lateral: nota / carrito */}
+      <div className="side-column card">
+        <CartPanel
+          items={cartItems}
+          note={note}
+          onChangeNote={setNote}
+          onRemove={removeItem}
+          onClear={handleClearNote}
+        />
       </div>
     </div>
   );
