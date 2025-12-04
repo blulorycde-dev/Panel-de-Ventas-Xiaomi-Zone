@@ -1,14 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { SalesPage } from "./pages/SalesPage";
+import { BrowserRouter } from "react-router-dom";
+import { AppRouter } from "./router";
 import "./styles/globals.css";
-import "./styles/theme.css";
-import { CartProvider } from "./hooks/useCart";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+ReactDOM.createRoot(
+  document.getElementById("root") as HTMLElement
+).render(
   <React.StrictMode>
-    <CartProvider>
-      <SalesPage />
-    </CartProvider>
+    <BrowserRouter>
+      <AppRouter />
+    </BrowserRouter>
   </React.StrictMode>
 );
