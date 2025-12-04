@@ -1,54 +1,99 @@
-// Lógica de carrito simple para el panel de ventas.
-// Importante: aquí no usamos JSX, solo hooks de React.
-
-import { useCallback, useMemo, useState } from "react";
+// frontend/src/hooks/useCart.ts
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useMemo,
+} from "react";
 import type { Product } from "./useProducts";
 
-export interface CartLine {
+export interface CartItem {
   product: Product;
-  quantity: number;
+  qty: number;
 }
 
-export interface UseCartResult {
-  items: CartLine[];
+interface CartContextValue {
+  items: CartItem[];
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
-  clearCart: () => void;
+  clear: () => void;
+  setQty: (productId: string, qty: number) => void;
   totalItems: number;
+  subtotalRetail: number;
 }
 
-export function useCart(): UseCartResult {
-  const [items, setItems] = useState<CartLine[]>([]);
+const CartContext = createContext<CartContextValue | undefined>(undefined);
 
-  const addItem = useCallback((product: Product) => {
+export const CartProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  const addItem = (product: Product) => {
     setItems((prev) => {
-      const existing = prev.find((l) => l.product.id === product.id);
+      const existing = prev.find((i) => i.product.id === product.id);
       if (existing) {
-        return prev.map((l) =>
-          l.product.id === product.id
-            ? { ...l, quantity: l.quantity + 1 }
-            : l
+        return prev.map((i) =>
+          i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, qty: 1 }];
     });
-  }, []);
+  };
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((l) => l.product.id !== productId));
-  }, []);
+  const removeItem = (productId: string) => {
+    setItems((prev) => prev.filter((i) => i.product.id !== productId));
+  };
 
-  const clearCart = useCallback(() => {
-    setItems([]);
-  }, []);
+  const clear = () => setItems([]);
 
-  const totalItems = useMemo(
-    () => items.reduce((sum, l) => sum + l.quantity, 0),
-    [items]
-  );
+  const setQty = (productId: string, qty: number) => {
+    const safeQty = Number.isFinite(qty) ? Math.max(0, Math.round(qty)) : 1;
 
-  return { items, addItem, removeItem, clearCart, totalItems };
-}
+    setItems((prev) => {
+      if (safeQty <= 0) {
+        // Si la cantidad es 0 o menos, sacamos el ítem
+        return prev.filter((i) => i.product.id !== productId);
+      }
+      return prev.map((i) =>
+        i.product.id === productId ? { ...i, qty: safeQty } : i
+      );
+    });
+  };
+
+  const { totalItems, subtotalRetail } = useMemo(() => {
+    const totals = items.reduce(
+      (acc, item) => {
+        acc.totalItems += item.qty;
+        acc.subtotalRetail += item.product.priceRetail * item.qty;
+        return acc;
+      },
+      { totalItems: 0, subtotalRetail: 0 }
+    );
+    return totals;
+  }, [items]);
+
+  const value: CartContextValue = {
+    items,
+    addItem,
+    removeItem,
+    clear,
+    setQty,
+    totalItems,
+    subtotalRetail,
+  };
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+};
+
+export const useCart = (): CartContextValue => {
+  const ctx = useContext(CartContext);
+  if (!ctx) {
+    throw new Error("useCart debe usarse dentro de CartProvider");
+  }
+  return ctx;
+};
 
 
 
