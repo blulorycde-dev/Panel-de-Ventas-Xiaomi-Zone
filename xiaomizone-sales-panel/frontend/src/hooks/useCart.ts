@@ -1,6 +1,5 @@
-// frontend/src/hooks/useCart.ts
-// Stub sencillo del carrito para que el proyecto compile.
-// Más adelante le agregamos estado real, contexto, etc.
+// Stub de carrito para usar más adelante.
+// IMPORTANTE: sin JSX aquí (archivo .ts).
 
 import { Product } from "./useProducts";
 
@@ -17,25 +16,18 @@ export interface UseCartResult {
   totalItems: number;
 }
 
-// Implementación “vacía” por ahora.
-// Así podemos usar useCart() sin que rompa el build.
 const emptyCart: UseCartResult = {
   items: [],
-  addItem: () => {
-    // TODO: implementar lógica real del carrito
-  },
-  removeItem: () => {
-    // TODO
-  },
-  clearCart: () => {
-    // TODO
-  },
-  totalItems: 0,
+  addItem: () => {},
+  removeItem: () => {},
+  clearCart: () => {},
+  totalItems: 0
 };
 
 export function useCart(): UseCartResult {
   return emptyCart;
 }
+
 
 
 
