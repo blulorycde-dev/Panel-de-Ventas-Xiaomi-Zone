@@ -1,4 +1,4 @@
-// frontend/src/hooks/useCart.ts
+// frontend/src/hooks/useCart.tsx
 import React, {
   createContext,
   useContext,
@@ -23,6 +23,7 @@ interface CartContextValue {
   subtotalRetail: number;
 }
 
+// El contexto puede ser CartContextValue o undefined
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({
@@ -50,7 +51,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const setQty = (productId: string, qty: number) => {
     const safeQty = Number.isFinite(qty) ? Math.max(0, Math.round(qty)) : 1;
-
     setItems((prev) => {
       if (safeQty <= 0) {
         // Si la cantidad es 0 o menos, sacamos el ítem
@@ -63,7 +63,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const { totalItems, subtotalRetail } = useMemo(() => {
-    const totals = items.reduce(
+    return items.reduce(
       (acc, item) => {
         acc.totalItems += item.qty;
         acc.subtotalRetail += item.product.priceRetail * item.qty;
@@ -71,7 +71,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       },
       { totalItems: 0, subtotalRetail: 0 }
     );
-    return totals;
   }, [items]);
 
   const value: CartContextValue = {
@@ -84,7 +83,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     subtotalRetail,
   };
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  // AQUÍ estaba el error: antes devolvía solo {children}
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  );
 };
 
 export const useCart = (): CartContextValue => {
@@ -94,6 +98,7 @@ export const useCart = (): CartContextValue => {
   }
   return ctx;
 };
+
 
 
 
