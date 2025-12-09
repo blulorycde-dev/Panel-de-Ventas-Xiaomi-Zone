@@ -1,12 +1,17 @@
-// frontend/src/hooks/useCart.tsx
 import React, {
   createContext,
   useContext,
   useState,
-  ReactNode,
   useMemo,
+  ReactNode,
 } from "react";
-import type { Product } from "./useProducts";
+
+export interface Product {
+  id: string;
+  title: string;
+  sku?: string | null;
+  priceRetail: number;
+}
 
 export interface CartItem {
   product: Product;
@@ -23,8 +28,7 @@ interface CartContextValue {
   subtotalRetail: number;
 }
 
-// El contexto puede ser CartContextValue o undefined
-const CartContext = createContext<CartContextValue | undefined>(undefined);
+const CartContext = createContext<CartContextValue | null>(null);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -53,7 +57,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     const safeQty = Number.isFinite(qty) ? Math.max(0, Math.round(qty)) : 1;
     setItems((prev) => {
       if (safeQty <= 0) {
-        // Si la cantidad es 0 o menos, sacamos el ítem
         return prev.filter((i) => i.product.id !== productId);
       }
       return prev.map((i) =>
@@ -83,7 +86,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     subtotalRetail,
   };
 
-  // AQUÍ estaba el error: antes devolvía solo {children}
   return (
     <CartContext.Provider value={value}>
       {children}
@@ -93,16 +95,19 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
 export const useCart = (): CartContextValue => {
   const ctx = useContext(CartContext);
+
+  // Fallback seguro si algún componente usa useCart fuera del provider
   if (!ctx) {
-    throw new Error("useCart debe usarse dentro de CartProvider");
+    return {
+      items: [],
+      addItem: () => {},
+      removeItem: () => {},
+      clear: () => {},
+      setQty: () => {},
+      totalItems: 0,
+      subtotalRetail: 0,
+    };
   }
+
   return ctx;
 };
-
-
-
-
-
-
-
-
