@@ -1,4 +1,4 @@
-// src/components/sales/SalesApiDebug.tsx
+// src/components/SalesApiDebug.tsx
 import { useEffect, useState } from "react";
 import {
   getHealth,
@@ -7,7 +7,7 @@ import {
   HealthResponse,
   PanelConfigResponse,
   LocationsResponse,
-} from "../../api/client";
+} from "../api/client";
 
 type Status = "idle" | "loading" | "ok" | "error";
 
@@ -135,3 +135,4 @@ export const SalesApiDebug: React.FC = () => {
     </div>
   );
 };
+
