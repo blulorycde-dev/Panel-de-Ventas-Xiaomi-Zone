@@ -4,6 +4,7 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ProductTable } from "../components/sales/ProductTable";
 import { useCart } from "../hooks/useCart";
 import { CartPanel } from "../components/sales/CartPanel";
+import { SalesApiDebug } from "../components/sales/SalesApiDebug";
 
 type BranchFilter = "AMBOS" | "DEPOSITO" | "TIENDA";
 
@@ -74,17 +75,21 @@ export const SalesPage: React.FC = () => {
     setNote("");
   }
 
-  return (
-    <div className="app-shell layout-main">
-      {/* Columna principal: búsqueda + tabla */}
-      <div className="main-column card">
-        <h1>Panel de ventas · Búsqueda de productos</h1>
-        <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
-          Vista rápida para vendedores — optimizada para{" "}
-          {isMobile ? "móvil" : "escritorio"}.
-        </p>
+return (
+  <div className="app-shell layout-main">
+    {/* Columna principal: búsqueda + tabla */}
+    <div className="main-column card">
+      <h1>Panel de ventas · Búsqueda de productos</h1>
+      <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
+        Vista rápida para vendedores — optimizada para{" "}
+        {isMobile ? "móvil" : "escritorio"}.
+      </p>
 
-        <form className="toolbar" onSubmit={handleSubmit}>
+      {/* Bloque de diagnóstico de API (solo técnico, se puede esconder luego) */}
+      <SalesApiDebug />
+
+      <form className="toolbar" onSubmit={handleSubmit}>
+
           <input
             type="text"
             placeholder="Buscar por nombre, SKU o código"
@@ -164,3 +169,4 @@ export const SalesPage: React.FC = () => {
     </div>
   );
 };
+
