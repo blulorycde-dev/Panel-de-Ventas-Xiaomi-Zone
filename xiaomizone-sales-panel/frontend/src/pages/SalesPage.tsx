@@ -4,7 +4,7 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ProductTable } from "../components/sales/ProductTable";
 import { useCart } from "../hooks/useCart";
 import { CartPanel } from "../components/sales/CartPanel";
-import { SalesApiDebug } from "../components/sales/SalesApiDebug";
+import { SalesApiDebug } from "../components/SalesApiDebug"; // ← OJO: sin "/sales/"
 
 type BranchFilter = "AMBOS" | "DEPOSITO" | "TIENDA";
 
@@ -168,4 +168,5 @@ export const SalesPage: React.FC = () => {
     </div>
   );
 };
+
 
