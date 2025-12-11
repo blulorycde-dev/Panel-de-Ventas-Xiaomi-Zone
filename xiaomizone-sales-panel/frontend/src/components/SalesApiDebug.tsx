@@ -1,4 +1,4 @@
-// src/components/SalesApiDebug.tsx
+// src/components/sales/SalesApiDebug.tsx
 import { useEffect, useState } from "react";
 import {
   getHealth,
@@ -7,11 +7,11 @@ import {
   HealthResponse,
   PanelConfigResponse,
   LocationsResponse,
-} from "../api/client";
+} from "../../api/client";
 
 type Status = "idle" | "loading" | "ok" | "error";
 
-export function SalesApiDebug() {
+export const SalesApiDebug: React.FC = () => {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -50,81 +50,88 @@ export function SalesApiDebug() {
   }, []);
 
   return (
-    <div style={{ padding: "1rem", border: "1px solid #ddd", borderRadius: 8 }}>
-      <h2>Diagnóstico API ventas</h2>
-      <p style={{ fontSize: 12, opacity: 0.8 }}>
-        Verificando conexión entre frontend y sales-panel-api.
-      </p>
-
-      <p>
-        Estado:{" "}
-        <strong>
-          {status === "idle" && "Idle"}
-          {status === "loading" && "Cargando..."}
-          {status === "ok" && "OK"}
-          {status === "error" && "Error"}
-        </strong>
-      </p>
+    <div
+      style={{
+        marginTop: 12,
+        padding: 12,
+        borderRadius: 8,
+        border: "1px solid #e5e7eb",
+        background: "#f9fafb",
+        fontSize: 12,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <strong>Diagnóstico API ventas</strong>
+        <span>
+          Estado:{" "}
+          <b>
+            {status === "idle" && "Idle"}
+            {status === "loading" && "Cargando..."}
+            {status === "ok" && "OK"}
+            {status === "error" && "Error"}
+          </b>
+        </span>
+      </div>
 
       {error && (
-        <p style={{ color: "red" }}>
+        <p style={{ color: "#b91c1c", marginTop: 8 }}>
           Error al conectar con la API: {error}
         </p>
       )}
 
       {health && (
-        <div style={{ marginTop: "1rem" }}>
-          <h3>/health</h3>
+        <details style={{ marginTop: 8 }}>
+          <summary>/health</summary>
           <pre
             style={{
-              background: "#f5f5f5",
-              padding: "0.5rem",
+              background: "#111827",
+              color: "#e5e7eb",
+              padding: 8,
               borderRadius: 4,
-              fontSize: 12,
               maxHeight: 200,
               overflow: "auto",
             }}
           >
-{JSON.stringify(health, null, 2)}
+            {JSON.stringify(health, null, 2)}
           </pre>
-        </div>
+        </details>
       )}
 
       {config && (
-        <div style={{ marginTop: "1rem" }}>
-          <h3>/config</h3>
+        <details style={{ marginTop: 8 }}>
+          <summary>/config</summary>
           <pre
             style={{
-              background: "#f5f5f5",
-              padding: "0.5rem",
+              background: "#111827",
+              color: "#e5e7eb",
+              padding: 8,
               borderRadius: 4,
-              fontSize: 12,
               maxHeight: 200,
               overflow: "auto",
             }}
           >
-{JSON.stringify(config, null, 2)}
+            {JSON.stringify(config, null, 2)}
           </pre>
-        </div>
+        </details>
       )}
 
       {locations && (
-        <div style={{ marginTop: "1rem" }}>
-          <h3>/locations</h3>
+        <details style={{ marginTop: 8 }}>
+          <summary>/locations</summary>
           <pre
             style={{
-              background: "#f5f5f5",
-              padding: "0.5rem",
+              background: "#111827",
+              color: "#e5e7eb",
+              padding: 8,
               borderRadius: 4,
-              fontSize: 12,
               maxHeight: 200,
               overflow: "auto",
             }}
           >
-{JSON.stringify(locations, null, 2)}
+            {JSON.stringify(locations, null, 2)}
           </pre>
-        </div>
+        </details>
       )}
     </div>
   );
-}
+};
