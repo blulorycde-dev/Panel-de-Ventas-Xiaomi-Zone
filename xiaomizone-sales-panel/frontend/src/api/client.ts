@@ -1,89 +1,113 @@
-// src/api/client.ts
+// frontend/src/api/client.ts
 
-const BASE_URL = import.meta.env.VITE_SALES_API_BASE;
+const BASE_URL =
+  (import.meta.env.VITE_SALES_API_BASE as string | undefined) ?? "";
 
 if (!BASE_URL) {
-  // Ayuda para detectar problemas de configuración
-  // En producción casi nunca deberías ver esto si la env está bien puesta en Cloudflare Pages.
-  console.warn(
-    "VITE_SALES_API_BASE no está definido. Configúralo en las variables de entorno de Cloudflare Pages."
-  );
+  console.warn("VITE_SALES_API_BASE no configurado en el frontend");
 }
 
-export async function apiFetch<T = any>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  if (!BASE_URL) {
-    throw new Error("API base URL no configurada (VITE_SALES_API_BASE).");
+function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
+  const url = new URL(path, BASE_URL || "http://localhost");
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(key, String(value));
+      }
+    }
   }
+  return url.toString();
+}
 
-  const url = `${BASE_URL}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
-
+async function handleJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Error API ${res.status}: ${text}`);
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Error API ${res.status} ${res.statusText || ""} ${text || ""}`.trim()
+    );
   }
-
-  // Intentamos parsear JSON; si falla, devolvemos null
-  try {
-    return (await res.json()) as T;
-  } catch {
-    return null as T;
-  }
+  return (await res.json()) as T;
 }
 
-// Helpers específicos
+// ---------------------- Tipos ----------------------
 
-export type HealthResponse = {
+export interface HealthResponse {
   ok: boolean;
-  message: string;
   mode: string;
   timestamp: string;
-};
+}
 
-export type PanelConfigResponse = {
-  ok: boolean;
+export interface PanelConfigResponse {
   config: {
-    mode: string;
-    supported_langs: string[];
-    rates: {
-      usd_pyg: number;
-      usd_brl: number;
-    };
+    panelMode: string;
+    supportedLangs: string[];
   };
-};
+}
 
-export type Location = {
+export interface LocationsResponse {
+  locations: Array<{
+    id: number;
+    code: string;
+    name: string;
+  }>;
+}
+
+export interface SearchProductsParams {
+  q?: string;
+  category?: string;
+  branchFilter?: "AMBOS" | "DEPOSITO" | "TIENDA";
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SearchProductsResponse {
+  items: ProductApiItem[];
+  page: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface ProductApiItem {
   id: number;
-  code: string;
+  sku: string;
   name: string;
-  is_active: number;
-  sort_order: number;
-  created_at: string;
-};
-
-export type LocationsResponse = {
-  ok: boolean;
-  locations: Location[];
-};
-
-export function getHealth() {
-  return apiFetch<HealthResponse>("/health");
+  category: string | null;
+  store_price_usd: number;
+  wholesale_price_usd: number | null;
+  min_price_usd: number | null;
+  min_price_locked: boolean;
+  stock_deposito: number;
+  stock_tienda: number;
 }
 
-export function getPanelConfig() {
-  return apiFetch<PanelConfigResponse>("/config");
+// ---------------------- Endpoints ----------------------
+
+export async function getHealth(): Promise<HealthResponse> {
+  const res = await fetch(buildUrl("/health"));
+  return handleJson<HealthResponse>(res);
 }
 
-export function getLocations() {
-  return apiFetch<LocationsResponse>("/locations");
+export async function getPanelConfig(): Promise<PanelConfigResponse> {
+  const res = await fetch(buildUrl("/config"));
+  return handleJson<PanelConfigResponse>(res);
+}
+
+export async function getLocations(): Promise<LocationsResponse> {
+  const res = await fetch(buildUrl("/locations"));
+  return handleJson<LocationsResponse>(res);
+}
+
+export async function searchProducts(
+  params: SearchProductsParams
+): Promise<SearchProductsResponse> {
+  const res = await fetch(
+    buildUrl("/products/search", {
+      q: params.q ?? "",
+      category: params.category ?? "",
+      branch: params.branchFilter ?? "AMBOS",
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 25,
+    })
+  );
+  return handleJson<SearchProductsResponse>(res);
 }
