@@ -36,7 +36,7 @@ export const SalesPage: React.FC = () => {
         category: category !== "TODAS" ? category : undefined,
         branchFilter,
         page: pageToLoad,
-        pageSize
+        pageSize,
       });
 
       setItems(data.items);
@@ -75,21 +75,20 @@ export const SalesPage: React.FC = () => {
     setNote("");
   }
 
-return (
-  <div className="app-shell layout-main">
-    {/* Columna principal: búsqueda + tabla */}
-    <div className="main-column card">
-      <h1>Panel de ventas · Búsqueda de productos</h1>
-      <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
-        Vista rápida para vendedores — optimizada para{" "}
-        {isMobile ? "móvil" : "escritorio"}.
-      </p>
+  return (
+    <div className="app-shell layout-main">
+      {/* Columna principal: búsqueda + tabla */}
+      <div className="main-column card">
+        <h1>Panel de ventas · Búsqueda de productos</h1>
+        <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
+          Vista rápida para vendedores — optimizada para{" "}
+          {isMobile ? "móvil" : "escritorio"}.
+        </p>
 
-      {/* Bloque de diagnóstico de API (solo técnico, se puede esconder luego) */}
-      <SalesApiDebug />
+        {/* Bloque de diagnóstico de API (solo técnico, se puede esconder luego) */}
+        <SalesApiDebug />
 
-      <form className="toolbar" onSubmit={handleSubmit}>
-
+        <form className="toolbar" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="Buscar por nombre, SKU o código"
@@ -131,7 +130,7 @@ return (
               borderRadius: 6,
               background: "#fef2f2",
               color: "#b91c1c",
-              fontSize: 12
+              fontSize: 12,
             }}
           >
             {error}
