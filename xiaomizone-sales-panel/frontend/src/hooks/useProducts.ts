@@ -1,59 +1,62 @@
-// Tipos compartidos para productos y filtros
-
-export type Branch = "DEPOSITO" | "TIENDA";
-
-export interface StockByBranch {
-  DEPOSITO: number;
-  TIENDA: number;
-}
+// frontend/src/hooks/useProducts.ts
+import { searchProducts } from "../api/client";
 
 export interface Product {
-  id: string;
+  id: number;
   sku: string;
   name: string;
-  category: string;
-  barcode?: string;
-  priceRetail: number;
-  priceWholesale: number;
-  imageUrl?: string;
-  stockByBranch: StockByBranch;
+  category: string | null;
+  storePriceUsd: number;
+  wholesalePriceUsd: number | null;
+  minPriceUsd: number | null;
+  minPriceLocked: boolean;
+  stockDeposito: number;
+  stockTienda: number;
 }
 
-export interface ProductsResponse {
+export interface FetchProductsParams {
+  q?: string;
+  category?: string;
+  branchFilter?: "AMBOS" | "DEPOSITO" | "TIENDA";
+  page?: number;
+  pageSize?: number;
+}
+
+export interface FetchProductsResult {
   items: Product[];
   page: number;
-  pageSize: number;
   total: number;
   totalPages: number;
 }
 
-/**
- * Llama al worker de API de panel:
- *   GET https://panel-general-api.blulorycde.workers.dev/api/products?q=...
- */
-export async function fetchProducts(params: {
-  q?: string;
-  category?: string;
-  branchFilter?: "AMBOS" | Branch;
-  page?: number;
-  pageSize?: number;
-}): Promise<ProductsResponse> {
-  const apiBase =
-    import.meta.env.VITE_API_BASE ??
-    "https://panel-general-api.blulorycde.workers.dev";
+export async function fetchProducts(
+  params: FetchProductsParams
+): Promise<FetchProductsResult> {
+  const res = await searchProducts({
+    q: params.q,
+    category: params.category,
+    branchFilter: params.branchFilter,
+    page: params.page,
+    pageSize: params.pageSize,
+  });
 
-  const url = new URL("/api/products", apiBase);
+  const items: Product[] = res.items.map((p) => ({
+    id: p.id,
+    sku: p.sku,
+    name: p.name,
+    category: p.category,
+    storePriceUsd: p.store_price_usd,
+    wholesalePriceUsd: p.wholesale_price_usd,
+    minPriceUsd: p.min_price_usd,
+    minPriceLocked: p.min_price_locked,
+    stockDeposito: p.stock_deposito,
+    stockTienda: p.stock_tienda,
+  }));
 
-  if (params.q) url.searchParams.set("q", params.q);
-  if (params.category && params.category !== "TODAS") {
-    url.searchParams.set("category", params.category);
-  }
-  if (params.page) url.searchParams.set("page", String(params.page));
-  if (params.pageSize) url.searchParams.set("pageSize", String(params.pageSize));
-
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    throw new Error(`Error ${res.status} al cargar productos`);
-  }
-  return (await res.json()) as ProductsResponse;
+  return {
+    items,
+    page: res.page,
+    total: res.total,
+    totalPages: res.totalPages,
+  };
 }
