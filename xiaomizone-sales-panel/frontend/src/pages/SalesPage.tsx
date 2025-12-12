@@ -1,172 +1,118 @@
 import React, { useEffect, useState } from "react";
-import { Product, fetchProducts } from "../hooks/useProducts";
-import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
-import { ProductTable } from "../components/sales/ProductTable";
-import { useCart } from "../hooks/useCart";
-import { CartPanel } from "../components/sales/CartPanel";
-import { SalesApiDebug } from "../components/SalesApiDebug"; // ← OJO: sin "/sales/"
+import { apiClient } from "../../api/client";
 
-type BranchFilter = "AMBOS" | "DEPOSITO" | "TIENDA";
+type ApiState = {
+  status: "idle" | "loading" | "ok" | "error";
+  error?: string;
+  health?: any;
+  config?: any;
+  locations?: any[];
+};
 
-export const SalesPage: React.FC = () => {
-  const { isMobile } = useResponsiveLayout();
+export const SalesApiDebug: React.FC = () => {
+  const [state, setState] = useState<ApiState>({ status: "loading" });
 
-  const [q, setQ] = useState("");
-  const [category, setCategory] = useState("TODAS");
-  const [branchFilter, setBranchFilter] = useState<BranchFilter>("AMBOS");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [items, setItems] = useState<Product[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(25);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const { items: cartItems, addItem, removeItem, clearCart } = useCart();
-  const [note, setNote] = useState("");
-
-  async function load(pageToLoad = 1) {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await fetchProducts({
-        q: q.trim() || undefined,
-        category: category !== "TODAS" ? category : undefined,
-        branchFilter,
-        page: pageToLoad,
-        pageSize,
-      });
-
-      setItems(data.items);
-      setPage(data.page);
-      setTotal(data.total);
-      setTotalPages(data.totalPages || 1);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.message ?? "Error al cargar productos");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Carga inicial
   useEffect(() => {
-    load(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const [healthRes, configRes, locRes] = await Promise.allSettled([
+          apiClient.get("/health"),
+          apiClient.get("/config"),
+          apiClient.get("/locations"),
+        ]);
+
+        if (cancelled) return;
+
+        const next: ApiState = { status: "ok" };
+
+        if (healthRes.status === "fulfilled") {
+          next.health = healthRes.value;
+        }
+        if (configRes.status === "fulfilled") {
+          next.config = configRes.value;
+        }
+        if (locRes.status === "fulfilled") {
+          next.locations =
+            (locRes.value as any)?.locations ?? (locRes.value as any);
+        }
+
+        if (
+          healthRes.status === "rejected" &&
+          configRes.status === "rejected" &&
+          locRes.status === "rejected"
+        ) {
+          next.status = "error";
+          next.error = "No se pudo contactar la API";
+        }
+
+        setState(next);
+      } catch (err: any) {
+        if (cancelled) return;
+        setState({
+          status: "error",
+          error: err?.message ?? "Error al cargar diagnóstico",
+        });
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function handleSubmit(evt: React.FormEvent) {
-    evt.preventDefault();
-    load(1);
-  }
-
-  function handleNextPage() {
-    if (page < totalPages) load(page + 1);
-  }
-
-  function handlePrevPage() {
-    if (page > 1) load(page - 1);
-  }
-
-  function handleClearNote() {
-    clearCart();
-    setNote("");
-  }
+  const { status, health, config, locations, error } = state;
 
   return (
-    <div className="app-shell layout-main">
-      {/* Columna principal: búsqueda + tabla */}
-      <div className="main-column card">
-        <h1>Panel de ventas · Búsqueda de productos</h1>
-        <p style={{ marginBottom: 12, color: "#6b7280", fontSize: 13 }}>
-          Vista rápida para vendedores — optimizada para{" "}
-          {isMobile ? "móvil" : "escritorio"}.
-        </p>
+    <div
+      style={{
+        marginBottom: 8,
+        padding: 8,
+        borderRadius: 6,
+        background: "#f9fafb",
+        border: "1px solid #e5e7eb",
+        fontSize: 12,
+      }}
+    >
+      <strong>Diagnóstico API ventas</strong>
+      <span style={{ float: "right" }}>
+        Estado:{" "}
+        <span style={{ color: status === "ok" ? "#16a34a" : "#b91c1c" }}>
+          {status.toUpperCase()}
+        </span>
+      </span>
 
-        {/* Bloque de diagnóstico de API (solo técnico, se puede esconder luego) */}
-        <SalesApiDebug />
-
-        <form className="toolbar" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Buscar por nombre, SKU o código"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            style={{ minWidth: 180, flex: "1 1 160px" }}
-          />
-
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="TODAS">Todas las categorías</option>
-            <option value="movilidad">Movilidad eléctrica</option>
-            <option value="myhome">My Home</option>
-            <option value="electronicos">Electrónicos</option>
-            <option value="wearables">Wearables</option>
-          </select>
-
-          <select
-            value={branchFilter}
-            onChange={(e) => setBranchFilter(e.target.value as BranchFilter)}
-          >
-            <option value="AMBOS">Depósito + Tienda</option>
-            <option value="DEPOSITO">Solo Depósito</option>
-            <option value="TIENDA">Solo Tienda</option>
-          </select>
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Cargando..." : "Buscar"}
-          </button>
-        </form>
-
-        {error && (
-          <div
-            style={{
-              marginBottom: 8,
-              padding: 8,
-              borderRadius: 6,
-              background: "#fef2f2",
-              color: "#b91c1c",
-              fontSize: 12,
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <ProductTable items={items} onAddToCart={addItem} />
-
-        <div className="pagination">
-          <span>
-            Página {page} de {totalPages} · {total} productos
-          </span>
-          <button onClick={handlePrevPage} disabled={page <= 1 || loading}>
-            Anterior
-          </button>
-          <button
-            onClick={handleNextPage}
-            disabled={page >= totalPages || loading}
-          >
-            Siguiente
-          </button>
+      {error && (
+        <div style={{ marginTop: 4, color: "#b91c1c" }}>
+          {error} (esto no afecta la búsqueda)
         </div>
-      </div>
+      )}
 
-      {/* Columna lateral: nota / carrito */}
-      <div className="side-column card">
-        <CartPanel
-          items={cartItems}
-          note={note}
-          onChangeNote={setNote}
-          onRemove={removeItem}
-          onClear={handleClearNote}
-        />
-      </div>
+      {config && (
+        <div style={{ marginTop: 4 }}>
+          <div>
+            Base API: <code>{config.apiBase ?? "-"}</code>
+          </div>
+          {typeof config.usd_rate === "number" && (
+            <div>Tasa USD: {config.usd_rate.toFixed(2)}</div>
+          )}
+        </div>
+      )}
+
+      {locations && locations.length > 0 && (
+        <details style={{ marginTop: 4 }}>
+          <summary>Locales conocidos ({locations.length})</summary>
+          <ul>
+            {locations.map((loc: any) => (
+              <li key={loc.id}>
+                {loc.code} – {loc.name}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 };
-
-
